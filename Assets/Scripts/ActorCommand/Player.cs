@@ -1,16 +1,17 @@
-﻿using DG.Tweening;
+﻿using BasicCommand;
+using DG.Tweening;
 using Shared;
 using UnityEngine;
 using Zenject;
 
-namespace BasicCommand
+namespace ActorCommand
 {
-    public class Player : MonoBehaviour
+    public class Player : MonoBehaviour, IActor
     {
         private ICommandExecutor<ICommand> _commandExecutor;
         private IInputHandler _inputHandler;
-        public static Player Instance;
-
+        private Sequence _currentAction;
+        
         [Inject]
         private void Inject(IInputHandler inputHandler, ICommandExecutor<ICommand> commandExecutor)
         {
@@ -18,21 +19,21 @@ namespace BasicCommand
             _commandExecutor = commandExecutor;
         }
         
-        private void Awake()
+        public void Jump()
         {
-            Instance = this;
+            if (_currentAction != null && _currentAction.IsPlaying())
+            {
+                return;
+            }
+            
+            _currentAction = transform.DOJump(transform.position, 1, 1, 0.2f).SetEase(Ease.InOutSine);
         }
-
-        public void DoJump()
-        {
-            transform.DOJump(transform.position, 1, 1, 0.2f).SetEase(Ease.InOutSine);
-        }
-
+        
         private void Update()
         {
             if (_inputHandler.IsButtonDown(ButtonType.Jump))
             {
-                _commandExecutor.PushCommand(new JumpBasicCommand());
+                _commandExecutor.PushCommand(new JumpCommand(this));
             }
         }
     }
